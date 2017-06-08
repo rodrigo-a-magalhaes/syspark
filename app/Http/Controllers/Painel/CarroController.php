@@ -10,11 +10,14 @@ class CarroController extends Controller
 {
 
     private $carro;
+    private $vagas;
 
     public function __construct(Carro $carro)
     {
         $this->carro = $carro;
+        $this->vagas = $carro->whereNull('saida')->count();
     }
+
 
     /**
      * Display a listing of the resource.
@@ -25,7 +28,7 @@ class CarroController extends Controller
     {
         $carros = $this->carro->all();
 
-        return view('site.entrada', compact('carros'));
+        return view('painel.carros.index', compact('carros'));
     }
 
     /**
@@ -37,7 +40,8 @@ class CarroController extends Controller
     {
         $title = "Cadastro";
         $active1 = "-ativo";
-        return view('painel.carros.create', compact('title', 'active1'));
+        $vagas = $this->vagas;
+        return view('painel.carros.create', compact('title', 'active1', 'vagas'));
     }
 
     /**
@@ -49,7 +53,9 @@ class CarroController extends Controller
     {
         $title = "Saida";
         $active2 = "-ativo";
-        return view('painel.carros.saida', compact('title', 'active2'));
+        $vagas = $this->vagas;
+        $car = $this->carro->whereNull('saida')->get();
+        return view('painel.carros.saida', compact('title', 'active2', 'vagas', 'car'));
     }
 
     /**
@@ -59,13 +65,11 @@ class CarroController extends Controller
      */
     public function relatorio()
     {
-
-
         $carros = $this->carro->orderBy('id', 'desc')->get();
         $title = "Relatorio";
         $active3 = "-ativo";
-
-        return view('painel.carros.relatorio', compact('title', 'active3', 'carros'));
+        $vagas = $this->vagas;
+        return view('painel.carros.relatorio', compact('title', 'active3', 'carros', 'vagas'));
     }
 
 
@@ -77,32 +81,29 @@ class CarroController extends Controller
      */
     public function store(Request $request)
     {
-        $dataForm = $request->all();
-
-        unset($dataForm['_token']);
-        $dataForm['entrada'] = date("Y-m-d H:i:s");
-        $dataForm['updated_at'] = date("Y-m-d H:i:s");
-        $dataForm['created_at'] = date("Y-m-d H:i:s");
-
-
-        $this->validate($request, $this->carro->rules);
-
-        $insert = $this->carro->insert($dataForm);
-        if ($insert) {
-            return redirect()->route('carros.index');
-        }
-
-        /*
-        if (!in_array(null, $dataForm)) {
-            $insert = $this->carro->insert($dataForm);
-            if ($insert) {
-                return redirect()->route('carros.index');
-            }
+        if ($this->vagas >= 5) {
+            return redirect('/entrada');
         } else {
-            return 'preencha todos os dados';
-        }
-*/
+            $dataForm = $request->all();
+            unset($dataForm['_token']);
+            $dataForm['entrada'] = date("Y-m-d H:i:s");
+            $dataForm['updated_at'] = date("Y-m-d H:i:s");
+            $dataForm['created_at'] = date("Y-m-d H:i:s");
 
+            //Verifica se o carro esta estacionado ainda
+            $carExist = $this->carro->where('placa', $dataForm['placa'])->where('saida', null)->get();
+
+            if($carExist->count() == 0){
+                //Valida so dados
+                $this->validate($request, $this->carro->rules);
+                $insert = $this->carro->insert($dataForm);
+                if ($insert) {
+                    return redirect('/saida');
+                }
+            }else{
+                return redirect('/entrada');
+            }
+        }
     }
 
     /**
@@ -128,6 +129,33 @@ class CarroController extends Controller
     }
 
     /**
+     * Editar
+     * Muda a data de saida do carro estacionado
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector|string
+     */
+    public function editar(Request $request)
+    {
+        $edit = $request->input();
+        unset($edit['_token']);
+
+        // Se nao existir carro selecionado retornar
+        if (empty($edit) || in_array(null, $edit)) {
+            return redirect('/saida');
+        } else {
+            $up = $this->carro->where('id', $edit)->update(['saida' => date("Y-m-d H:i:s")]);
+
+            if ($up) {
+                return redirect('/saida');
+            } else {
+                return "Erro ao atualizar";
+            }
+        }
+    }
+
+
+    /**
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request $request
@@ -140,60 +168,26 @@ class CarroController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Deleta item Carro do banco
+     * -> Verifica se existe objeto - deleta / redireciona para relatorio
      *
      * @param  int $id
      * @return \Illuminate\Http\Response
      */
     public function destroy($id)
     {
-        //
+        $item = $this->carro->find($id);
+        if ($item) {
+            $item->delete();
+            return redirect()->back();
+        } else {
+            return redirect('/relatorio');
+        }
     }
-
 
     public function tests()
     {
-        /*
-        $car = $this->carro;
-        $car->placa = 'aaa1234';
-        $car->modelo = 'modeloCarro';
-        $car->cor = 'azul';
-        $car->entrada = date("Y-m-d H:i:s");
-        $car->saida = null;
-        $insert = $car->save();
-
-        if ($insert) {
-            return 'Criado com sucesso.';
-        } else {
-            return 'Nao foi criado';
-        }
-
-        ATUALIZAR
-        $car = $this->carro->find(1);
-        $car->placa = 'bbb1234';
-        $car->modelo = 'modelooo';
-        $car->cor = 'azul';
-        $car->entrada = date("Y-m-d H:i:s");
-        $car->saida = null;
-        $update = $car->save();
-
-        if($update){
-            return "Atualizado";
-        }else{
-            return "Nao atualizou";
-        }
-
-
-        $car = $this->carro->find(1);
-        $delete = $car->delete();
-
-        if ($delete) {
-            return "Deletado";
-        } else {
-            return "Erro";
-        }
-  */
-
+        //
     }
 
 

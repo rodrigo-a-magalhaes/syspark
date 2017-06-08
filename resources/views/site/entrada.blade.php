@@ -2,6 +2,7 @@
 
 @section('content')
 
+    <h1>Pagina errada</h1>
     <form action="{{route('carros.store')}}" method="post">
         <div class="container">
             <input type="hidden" name="_token" value="bQXn3oZKpqRS9uVNJObPJtVPLAHVEuMNhMthNyrw">

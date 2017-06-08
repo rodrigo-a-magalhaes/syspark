@@ -90,6 +90,11 @@ form > .container {
     color: #6e6e6e; font-weight: normal;
 }
 
+.contSaida{width: 20%; float: left; text-align: center;}
+.saidaPlaca{font-size: 1.3em; font-weight: bold; text-transform: uppercase;}
+.saidaDesc{font-size: 0.9em; font-weight: normal}
+
+.clear{clear: both;}
 .placa{font-size: 1.5em; text-transform: uppercase; text-align: center; padding: 0; margin: 0 0 0 -5px;}
 .placaDesc{padding: 0; margin: 0; font-size: 1em; color: #dcdcdc;}
 .delete{float: right; margin: 0; border-radius: 5px;}

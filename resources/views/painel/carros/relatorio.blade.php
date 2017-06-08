@@ -1,11 +1,13 @@
-@extends('site.template.template')
+@extends('painel.carros.template.template')
 
 @section('content')
 
     @foreach($carros as $carro)
         <div class="container">
             <div class="campo botao -view {{(!empty($carro->saida)? '-offRelatorio' : '-cinza')}} -left">
-                <p class="placa">{{$carro->placa}}<span class="delete"><a href="">X</a></span></p>
+                <p class="placa">{{$carro->placa}}
+                    <span class="delete"><a href="{{route('carros.destroy', 'del/'.$carro->id)}}">X</a></span>
+                </p>
                 <p class="placaDesc">id: {{$carro->id}}</p>
                 <p class="placaDesc">Modelo: {{$carro->modelo}}</p>
                 <p class="placaDesc">Cor: {{$carro->cor}}</p>
